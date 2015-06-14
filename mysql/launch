@@ -1,0 +1,31 @@
+#!/bin/bash
+set -e
+
+mkdir -p -m 700 /var/lib/mysql
+chown -R mysql:mysql /var/lib/mysql
+
+if [ ! -d /var/lib/mysql/mysql ]; then
+  echo "Installing database"
+  mysql_install_db --user=mysql > /dev/null
+
+  echo "Starting MySQL"
+  /usr/bin/mysqld_safe > /dev/null 2>&1 &
+
+  timeout=30
+  while ! /usr/bin/mysqladmin -uroot status > /devn/null 2>&1
+  do
+    timeout=$(($timeout - 1))
+    if [$timeout -eq 0]; then
+      echo -e "¥n Could not connect to database"
+      exit 1
+    fi
+    echo -e "."
+    sleep 1
+  done
+
+  mysqladmin -u root password 'passw0rd'
+  mysql -u root -ppassw0rd -e"grant all privileges on *.* to root@"%" identified by "passw0rd" with grant option"
+
+fi
+
+exec /usr/bin/mysqld_safe
